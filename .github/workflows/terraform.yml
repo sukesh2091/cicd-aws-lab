@@ -1,3 +1,4 @@
+# Name of the workflow as it will appear in the GitHub Actions tab
 name: Deploy AWS Infrastructure with Terraform
 
 # Trigger the workflow on push or pull request to the main branch
@@ -11,37 +12,39 @@ on:
 
 jobs:
   terraform:
-    name: Infrastructure Deployment on AWS      # Name of the Job
-    runs-on: ubuntu-latest                      # The type of runner to use
-  
-  # Environment Variables
+    name: Terraform Plan & Apply           # Name of the job
+    runs-on: ubuntu-latest                 # Use the latest Ubuntu runner
+
+    # Environment variables for AWS authentication (from GitHub Secrets)
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  # AWS Access Key ID
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # AWS Secret Access Key
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
-      # Checkout the code from the repository
-      - name: Checkout Code
-        uses: actions/checkout@v2
+    # Step 1: Checkout the code from the repository
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      # Install Terraform
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 1.0.0
+    # Step 2: Install the specified version of Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
 
-      # Initialize Terraform
-      - name: Initialize Terraform
-        run: terraform init
+    # Step 3: Initialize the Terraform working directory
+    - name: Terraform Init
+      run: terraform init
 
-      # Validate Terraform Configuration for errors
-      - name: Validate Terraform Configuration
-        run: terraform validate
+    # Step 4: Validate Terraform code to catch syntax or config errors
+    - name: Terraform Validate
+      run: terraform validate
 
-      # Show execution plan
-      - name: Plan Terraform Deployment
-        run: terraform plan
+    # Step 5: Show the execution plan (preview changes)
+    - name: Terraform Plan
+      run: terraform plan
 
-      # Apply the Terraform configuration on Push or pull request
-      - name: Apply Terraform Deployment
-        run: terraform apply -auto-approve
+    # Step 6: Apply the Terraform plan only on push to main (not for PRs)
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve    # Auto-approve to skip manual confirmation
+
