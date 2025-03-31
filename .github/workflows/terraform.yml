@@ -43,6 +43,5 @@ jobs:
 
       # Apply Terraform deployment
       - name: Apply Terraform
-        if github.event_name == 'push' 
         run: terraform apply -auto-approve  
   
